@@ -1,0 +1,1404 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Renova.web — Soffit</title>
+<meta name="description" content="A studio crafting bold brand identities, digital experiences and motion-driven narratives.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* ══ Reset ═══════════════════════════════════════════════════════════
+ * Only the parts the composition actually depends on — notably headings
+ * and paragraphs losing their UA margins, and `border-style: solid` by
+ * default so a bare `border-width` still paints. */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  border: 0 solid;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-size: inherit;
+  font-weight: inherit;
+}
+
+p, h1, h2, h3, h4, h5, h6, figure, blockquote, dl, dd, pre, hr {
+  margin: 0;
+}
+
+ul, ol, menu {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+b, strong { font-weight: bolder; }
+
+small { font-size: 80%; }
+
+img, svg, video, canvas {
+  display: block;
+  max-width: 100%;
+}
+
+button, input, select, textarea {
+  margin: 0;
+  padding: 0;
+  font: inherit;
+  color: inherit;
+  background: transparent;
+}
+
+/* ══ Tokens ══════════════════════════════════════════════════════════
+ * Every number below is a Figma measurement in CSS pixels at the 1920
+ * design width. The RESPONSIVE block near the bottom is the only other
+ * place these are written, and it only ever restates them. */
+:root {
+  --font-onest: "Onest", system-ui, sans-serif;
+
+  /* ── Palette ─────────────────────────────────────────────────────── */
+  --page: #ffffff;         /* frame fill                                */
+  --ink: #000000;          /* every dark type run                       */
+  --card-light: #f6f6f6;   /* Rectangle 8 / Rectangle 12                */
+  --on-dark: #ffffff;      /* type on the union                         */
+  --on-dark-dim: rgba(255, 255, 255, 0.5);  /* the year / studio column */
+  --hairline: rgba(255, 255, 255, 0.1);     /* Line 1, Line 2, chips    */
+
+  /* ── The union gradient ──────────────────────────────────────────────
+   * The ramp the design ships with. Soffit plays over it; this is what
+   * the three cells fall back to when WebGL2 is not there. It runs at
+   * 160deg and is piecewise linear with knees at 17% and 50%. Stops
+   * beyond 83% never show — the union's far corner lands there — but
+   * they keep the ramp sane when a breakpoint reshapes the box. */
+  --grad: linear-gradient(
+    160deg,
+    #0a0a0a 0%,
+    #0f0f0f 17%,
+    #2b2b2b 34%,
+    #464646 50%,
+    #686868 66%,
+    #8d8d8d 83%,
+    #b0b0b0 100%
+  );
+
+  /* ── Frame ───────────────────────────────────────────────────────── */
+  --pad-x: 30px;           /* 30 → 1890                                  */
+  --pad-y: 60px;           /* 60 → 1020                                  */
+  --gap: 20px;             /* the one gutter, columns and rows alike     */
+  --radius: 12px;
+  --card-pad: 24px;        /* every card, all four sides                 */
+
+  /* ── Header ──────────────────────────────────────────────────────── */
+  --head-gap: 48px;        /* h1 bottom 132 → lead top 180               */
+  --grid-gap: 60px;        /* header bottom 267 → cards top 327          */
+  --btn-pad-y: 20px;
+  --btn-pad-x: 48px;
+
+  /* ── Card block rows ─────────────────────────────────────────────────
+   * Three tracks, so the two columns that split differently can still
+   * share one grid: quote = r1, contact = r3, stat = r2+r3, stack =
+   * r1+r2, experience = all three. 280 + 20 + 93 + 20 + 280 = 693. */
+  --r1: 280px;
+  --r2: 93px;
+  --r3: 280px;
+
+  /* ── Type ────────────────────────────────────────────────────────── */
+  --fs-h1: 72px;           /* Onest Medium, leading-none                 */
+  --fs-lead: 24px;         /* Onest Regular, 1.2                         */
+  --fs-tag: 24px;          /* Onest Medium, leading-none                 */
+  --fs-body: 20px;         /* Onest Regular, 1.2                         */
+  --fs-stat: 72px;         /* Onest Medium, leading-none                 */
+  --fs-cap: 24px;          /* Onest Medium, leading-none                 */
+  --fs-glyph: 24px;        /* ◐ ◫ ✦ ◇, Onest Regular, 1.2                */
+
+  /* ── Card furniture ──────────────────────────────────────────────── */
+  --star: 18px;            /* the ✳ Union glyph beside each tag          */
+  --tag-gap: 16px;
+  --row-gap: 48px;         /* experience row 501 → 573, hairline at 549  */
+  --chip: 60px;
+  --chip-gap: 17px;
+  --chip-radius: 16px;
+  --stat-gap: 16px;        /* 10M+ → views rendered                      */
+  --dot: 6px;
+  --dot-gap: 12px;
+}
+
+html {
+  background: var(--page);
+}
+
+body {
+  margin: 0;
+  min-height: 100svh;
+  overflow-x: hidden;
+  background: var(--page);
+  font-family: var(--font-onest);
+  color: var(--ink);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Full bleed. The frame is opaque white in Figma, so there is no page
+ * scrim — the three union cells are the only openings, and Soffit is
+ * what shows through them. */
+.lk-stage {
+  position: relative;
+  min-height: 100svh;
+  background: var(--page);
+}
+
+.uip-layer {
+  position: relative;
+  z-index: 1;
+  background: var(--page);
+}
+
+/* ── Entry state ──────────────────────────────────────────────────
+ * Elements that cascade in start hidden so nothing flashes before the
+ * script takes over. The script itself sets `.lk-js` on <html>, so
+ * with JS off the rule never matches and the page renders fully — no
+ * blank composition.
+ *
+ * `will-change` deliberately does NOT live here: it would create a
+ * permanent stacking context on every cascading element, trapping the
+ * `z-index` of anything inside. The script sets it inline for the
+ * flight and clears it on settle. */
+html.lk-js [data-rise] {
+  opacity: 0;
+}
+
+/* ══ Bento — the composition ════════════════════════════════════════ */
+
+/* The section fills the screen — 60px of air above and below, 30px left
+ * and right — at every viewport. A flex column so the card block can
+ * take whatever the headline and header row leave over; `min-height`
+ * (not `height`) so a window too short for the composition scrolls
+ * instead of crushing it. */
+.bn-page {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  min-height: 100svh;
+  padding: var(--pad-y) var(--pad-x);
+}
+
+/* ── Headline ─────────────────────────────────────────────────────────
+ * x 30 / y 60, Onest Medium 72, leading-none. */
+.bn-title {
+  font-weight: 500;
+  font-size: var(--fs-h1);
+  line-height: 1;
+  color: var(--ink);
+}
+
+/* ── Header row ───────────────────────────────────────────────────────
+ * Rides the same three tracks as the card block: the lead sits in the
+ * middle column (x 657, w 606), the button in the right one
+ * (x 1283, w 607). The first cell is an empty spacer.
+ *
+ * Both cells end on the same line in Figma — lead 180→267, button
+ * 198→267 — so the button is bottom-aligned, not dropped by a fixed
+ * offset. That is what keeps it on the baseline of the paragraph when
+ * the lead rewraps to a different number of lines. */
+.bn-head {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--gap);
+  align-items: end;
+  margin-top: var(--head-gap);
+}
+
+.bn-lead {
+  font-weight: 400;
+  font-size: var(--fs-lead);
+  line-height: 1.2;
+  color: var(--ink);
+}
+
+.bn-works {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  /* Figma strokes are drawn inside the frame, so the 20/48 padding on a
+   * 69px-tall box already contains the hairline — the 1px comes back off
+   * here or the button ends up 70.8 and pushes the card block down. */
+  padding: calc(var(--btn-pad-y) - 1px) calc(var(--btn-pad-x) - 1px);
+  border: 1px dashed var(--ink);
+  border-radius: var(--radius);
+  font-weight: 400;
+  font-size: var(--fs-lead);
+  line-height: 1.2;
+  color: var(--ink);
+  text-align: center;
+  text-decoration: none;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+/* ── The card block ───────────────────────────────────────────────────
+ * 1860 × 693 at the design size. Three equal columns; three row tracks
+ * so the middle and right columns can split at different heights inside
+ * one grid. `flex: 1` takes the leftover screen height and `minmax`
+ * hands all of it to the middle track — never below its design 93px.
+ * `position: relative` makes it the frame the live ground is laid in. */
+.bn-grid {
+  position: relative;
+  flex: 1 1 auto;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: var(--r1) minmax(var(--r2), 1fr) var(--r3);
+  gap: var(--gap);
+  margin-top: var(--grid-gap);
+}
+
+.bn-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: var(--card-pad);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+
+.bn-card--light {
+  background: var(--card-light);
+  color: var(--ink);
+}
+
+/* ── One gradient, three cells ────────────────────────────────────────
+ * The boolean Union, rebuilt: identical paint, identical size, only the
+ * origin differs. `--win-w` / `--win-h` are the union box measured from
+ * inside the card, so both are percentages of the card plus the fixed
+ * tracks the card does not itself cover — that is what lets the middle
+ * row stretch without the ramp drifting. `--bg-x` / `--bg-y` exploit the
+ * fact that a background-position percentage resolves against
+ * (box − image), so 0% / 50% / 100% land the three columns exactly. */
+.bn-card--union {
+  color: var(--on-dark);
+  background-image: var(--grad);
+  background-repeat: no-repeat;
+  background-size: var(--win-w) var(--win-h);
+  background-position: var(--bg-x) var(--bg-y);
+  --win-w: calc(300% + var(--gap) * 2);
+}
+
+/* ── The live ground ──────────────────────────────────────────────────
+ * Soffit, laid into the same union box as the ramp above — same size,
+ * same origin — so the three cells show one continuous field rather
+ * than three crops of it. It is ONE canvas, not a copy per cell: it
+ * sits under the cards, spans the whole union, and is cut down to the
+ * three rounded cells with a clip-path, so a frame still costs a single
+ * draw however many cells look through it.
+ *
+ * Hidden until the shader has compiled and drawn once. From then on
+ * `.lk-gl` drops the ramp out of the cells so the canvas shows through;
+ * without WebGL2 none of this matches and the design's own ground stays.
+ * Box, clip and veils are written by the script (see THE OPENING) — the
+ * union box is simply the bounds of the three cells, so no breakpoint
+ * has to restate it. */
+.bn-ground {
+  display: none;
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+html.lk-gl .bn-ground { display: block; }
+html.lk-gl .bn-card--union { background-image: none; }
+
+#gl {
+  width: 100%;
+  height: 100%;
+}
+
+/* One per cell, between the canvas and its card. The canvas cannot fade
+ * per cell, so while a card is cascading in its veil fades OUT in step —
+ * the cell reads as rising out of the page, exactly as it would with the
+ * ground painted on the card itself. At rest it is switched off. */
+.bn-veil {
+  position: absolute;
+  visibility: hidden;
+  background: var(--page);
+}
+
+/* ── Placement ────────────────────────────────────────────────────────
+ * EXPERIENCE is the whole union; 10M+ sits one light card down the
+ * middle column; OUR TOOL STACK sits at the top of the right one. */
+.bn-exp {
+  grid-column: 1; grid-row: 1 / 4;
+  --win-h: 100%;
+  --bg-x: 0%; --bg-y: 0%;
+}
+
+.bn-quote { grid-column: 2; grid-row: 1 / 2; }
+
+.bn-stat {
+  grid-column: 2; grid-row: 2 / 4;
+  --win-h: calc(100% + var(--r1) + var(--gap));
+  --bg-x: 50%; --bg-y: 100%;
+}
+
+.bn-stack {
+  grid-column: 3; grid-row: 1 / 3;
+  --win-h: calc(100% + var(--r3) + var(--gap));
+  --bg-x: 100%; --bg-y: 0%;
+}
+
+.bn-contact { grid-column: 3; grid-row: 3 / 4; }
+
+/* ── Card tag ─────────────────────────────────────────────────────────
+ * ✳ LABEL ✳ — the 18px glyph is the flattened Union path from the file,
+ * inlined so it inherits the card's colour. */
+.bn-tag {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--tag-gap);
+  font-weight: 500;
+  font-size: var(--fs-tag);
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.bn-star {
+  flex: none;
+  width: var(--star);
+  height: var(--star);
+  fill: currentColor;
+}
+
+/* ── EXPERIENCE ───────────────────────────────────────────────────────
+ * Tag pinned top, the three rows pinned bottom (`space-between` on the
+ * card resolves to the 453px the design leaves between them). */
+.bn-exp-list {
+  font-weight: 400;
+  font-size: var(--fs-body);
+  line-height: 1.2;
+}
+
+.bn-exp-row {
+  position: relative;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: var(--gap);
+  color: var(--on-dark-dim);
+}
+
+.bn-exp-row + .bn-exp-row {
+  margin-top: var(--row-gap);
+}
+
+/* Line 1 / Line 2 — 1px at exactly half the row gap. */
+.bn-exp-row + .bn-exp-row::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: calc(var(--row-gap) / -2);
+  height: 1px;
+  background: var(--hairline);
+}
+
+.bn-exp-row span:nth-child(1) { text-align: left; }
+.bn-exp-row span:nth-child(3) { text-align: right; }
+
+.bn-exp-row em {
+  font-style: normal;
+  color: var(--on-dark);
+  white-space: nowrap;
+}
+
+/* ── TESTIMONIAL ──────────────────────────────────────────────────────
+ * The quote is set as four hard lines in Figma (the text node is
+ * auto-width, 436px, with manual breaks), so the breaks are markup, not
+ * wrapping. Below the two-column step they are dropped and the quote
+ * wraps to its cell. */
+.bn-quote-body,
+.bn-quote-by {
+  font-weight: 400;
+  font-size: var(--fs-body);
+  line-height: 1.2;
+  text-align: center;
+}
+
+/* ── 10M+ ─────────────────────────────────────────────────────────────
+ * Frame 13: a 178 × 112 stack centred in the cell, gap 16. The number
+ * is left-set inside that box, the caption centred — exactly as the
+ * frame is built. */
+.bn-stat {
+  justify-content: center;
+  align-items: center;
+}
+
+.bn-stat-box {
+  display: flex;
+  flex-direction: column;
+  gap: var(--stat-gap);
+}
+
+.bn-stat-num {
+  font-weight: 500;
+  font-size: var(--fs-stat);
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.bn-stat-cap {
+  font-weight: 500;
+  font-size: var(--fs-cap);
+  line-height: 1;
+  text-align: center;
+  white-space: nowrap;
+}
+
+/* ── OUR TOOL STACK ───────────────────────────────────────────────── */
+.bn-chips {
+  display: flex;
+  align-self: center;
+  gap: var(--chip-gap);
+}
+
+.bn-chips i {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--chip);
+  height: var(--chip);
+  border: 1px solid var(--hairline);
+  border-radius: var(--chip-radius);
+  font-style: normal;
+  font-weight: 400;
+  font-size: var(--fs-glyph);
+  line-height: 1.2;
+}
+
+/* ── CONTACT ──────────────────────────────────────────────────────── */
+.bn-contact-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--dot-gap);
+  font-weight: 400;
+  font-size: var(--fs-body);
+  line-height: 1.2;
+}
+
+.bn-contact-row b {
+  flex: none;
+  width: var(--dot);
+  height: var(--dot);
+  border: 1px solid var(--ink);
+  border-radius: 50%;
+}
+
+/* ══ RESPONSIVE ══════════════════════════════════════════════════════
+ * Four steps. The first two keep the 3-column composition and only
+ * rescale it; the third folds to two columns; the fourth stacks. Every
+ * step restates the union box so the ramp stays continuous — where the
+ * geometry stops being a clean 3 × N grid the offsets go to plain
+ * percentages or pixels, which is why `--win-w` / `--win-h` / `--bg-y`
+ * are overridden by hand below. The live ground needs none of it: its
+ * box is measured off the three cells, whatever they fold into. */
+
+@media (max-width: 1599px) {
+  :root {
+    --gap: 18px;
+    --card-pad: 22px;
+    --head-gap: 40px;
+    --grid-gap: 48px;
+    --btn-pad-y: 17px;
+    --btn-pad-x: 40px;
+
+    --r1: 250px;
+    --r2: 84px;
+    --r3: 250px;
+
+    --fs-h1: 60px;
+    --fs-lead: 21px;
+    --fs-tag: 21px;
+    --fs-body: 18px;
+    --fs-stat: 60px;
+    --fs-cap: 21px;
+    --fs-glyph: 21px;
+
+    --star: 16px;
+    --tag-gap: 14px;
+    --row-gap: 42px;
+    --chip: 54px;
+    --chip-gap: 15px;
+    --chip-radius: 14px;
+  }
+}
+
+@media (max-width: 1279px) {
+  :root {
+    --gap: 18px;
+    --card-pad: 20px;
+    --head-gap: 32px;
+    --grid-gap: 40px;
+    --btn-pad-y: 15px;
+    --btn-pad-x: 28px;
+
+    --r1: 225px;
+    --r2: 76px;
+    --r3: 225px;
+
+    --fs-h1: 44px;
+    --fs-lead: 19px;
+    --fs-tag: 19px;
+    --fs-body: 16px;
+    --fs-stat: 50px;
+    --fs-cap: 19px;
+    --fs-glyph: 19px;
+
+    --star: 15px;
+    --tag-gap: 12px;
+    --row-gap: 36px;
+    --chip: 48px;
+    --chip-gap: 13px;
+    --chip-radius: 13px;
+  }
+}
+
+/* ── Two columns ──────────────────────────────────────────────────────
+ * Left: EXPERIENCE over OUR TOOL STACK. Right: TESTIMONIAL over 10M+
+ * over CONTACT. Rows 230 / 330 / 240 with an 18px gutter, so the union
+ * box is (200% + gap) × 836. */
+@media (max-width: 1023px) {
+  :root {
+    --gap: 18px;
+    --card-pad: 20px;
+    --head-gap: 28px;
+    --grid-gap: 32px;
+
+    --fs-h1: 40px;
+    --fs-lead: 18px;
+    --fs-tag: 19px;
+    --fs-body: 16px;
+    --fs-stat: 48px;
+    --fs-cap: 18px;
+    --fs-glyph: 19px;
+
+    --star: 14px;
+    --row-gap: 32px;
+    --chip: 46px;
+    --chip-gap: 12px;
+  }
+
+  .bn-head { grid-template-columns: repeat(2, 1fr); }
+  .bn-head-spacer { display: none; }
+  .bn-nl { display: none; }
+
+  /* Left: EXPERIENCE over OUR TOOL STACK. Right: TESTIMONIAL over 10M+
+   * over CONTACT. 230 / 330 / 240 with an 18px gutter → 836.
+   *
+   * At three columns the slack could go into the one track all three
+   * union cells straddle. Two columns have no such track — stack the
+   * cells and one of them always ends up outside it — so here the whole
+   * block scales instead: the row gutters are `fr` tracks like the rows
+   * themselves, which keeps every ratio inside the union constant and
+   * lets the offsets be written as percentages of the cell. `min-height`
+   * pins the design size, so a window shorter than the composition
+   * scrolls rather than crushing it, and the ratios still hold.
+   *
+   * The cost is that the row gutters grow with the block while the
+   * column gutter stays 18px — a few pixels apart at the tallest
+   * windows this tier ever sees. */
+  .bn-grid {
+    grid-template-columns: repeat(2, 1fr);
+    grid-template-rows: 230fr 18fr 330fr 18fr 240fr;
+    min-height: 836px;
+    column-gap: var(--gap);
+    row-gap: 0;
+  }
+
+  .bn-card--union { --win-w: calc(200% + var(--gap)); }
+
+  .bn-exp {
+    grid-column: 1; grid-row: 1 / 4;
+    --win-h: 144.6367%;                     /* 836 / 578 */
+    --bg-x: 0%; --bg-y: 0%;
+  }
+  .bn-quote { grid-column: 2; grid-row: 1 / 2; }
+  .bn-stat {
+    grid-column: 2; grid-row: 3 / 4;
+    --win-h: 253.3333%;                     /* 836 / 330 */
+    --bg-x: 100%; --bg-y: 49.0119%;         /* 248 / (836 − 330) */
+  }
+  .bn-stack {
+    grid-column: 1; grid-row: 5 / 6;
+    --win-h: 348.3333%;                     /* 836 / 240 */
+    --bg-x: 0%; --bg-y: 100%;               /* 596 / (836 − 240) */
+  }
+  .bn-contact { grid-column: 2; grid-row: 5 / 6; }
+}
+
+/* ── One column ───────────────────────────────────────────────────────
+ * 400 / 260 / 240 / 220 / 190 with a 16px gutter — the union box is the
+ * full stack, 1168 tall, and each dark card offsets into it. */
+@media (max-width: 767px) {
+  :root {
+    --gap: 16px;
+    --card-pad: 20px;
+    --head-gap: 24px;
+    --grid-gap: 28px;
+    --btn-pad-y: 14px;
+    --btn-pad-x: 24px;
+
+    --fs-h1: 38px;
+    --fs-lead: 17px;
+    --fs-tag: 18px;
+    --fs-body: 15px;
+    --fs-stat: 46px;
+    --fs-cap: 17px;
+    --fs-glyph: 18px;
+
+    --star: 13px;
+    --tag-gap: 10px;
+    --row-gap: 30px;
+    --chip: 46px;
+    --chip-gap: 12px;
+    --stat-gap: 12px;
+  }
+
+  .bn-head { grid-template-columns: 1fr; }
+
+  /* One column is always taller than the phone it is on, so there is
+   * never slack to distribute: fixed tracks, fixed gutters, and the
+   * union offsets go back to plain pixels. */
+  .bn-grid {
+    flex: none;
+    grid-template-columns: 1fr;
+    grid-template-rows: 400px 260px 240px 220px 190px;
+    min-height: 0;
+    gap: var(--gap);
+  }
+
+  .bn-card--union {
+    --win-w: 100%;
+    --win-h: 1168px;      /* 400 + 16 + 260 + 16 + 240 + 16 + 220 */
+    --bg-x: 0%;
+  }
+
+  .bn-exp     { grid-column: 1; grid-row: 1 / 2; --win-h: 1168px; --bg-y: 0px; }
+  .bn-quote   { grid-column: 1; grid-row: 2 / 3; }
+  .bn-stat    { grid-column: 1; grid-row: 3 / 4; --win-h: 1168px; --bg-y: -692px; }
+  .bn-stack   { grid-column: 1; grid-row: 4 / 5; --win-h: 1168px; --bg-y: -948px; }
+  .bn-contact { grid-column: 1; grid-row: 5 / 6; }
+
+  /* The three experience columns stop fitting side by side: the year and
+   * the studio keep the row, the role drops under them. */
+  .bn-exp-row {
+    grid-template-columns: auto 1fr;
+    row-gap: 2px;
+  }
+  .bn-exp-row span:nth-child(1) { grid-area: 1 / 1 / 2 / 2; }
+  .bn-exp-row span:nth-child(3) { grid-area: 1 / 2 / 2 / 3; }
+  .bn-exp-row em { grid-area: 2 / 1 / 3 / 3; text-align: left; }
+}
+
+/* Row heights are deliberately NOT restated here — only type shrinks, so
+ * the union offsets above stay valid. */
+@media (max-width: 479px) {
+  :root {
+    --card-pad: 16px;
+    --fs-h1: 30px;
+    --fs-lead: 15px;
+    --fs-tag: 16px;
+    --fs-body: 14px;
+    --fs-stat: 38px;
+    --fs-cap: 15px;
+    --fs-glyph: 16px;
+    --star: 12px;
+    --tag-gap: 8px;
+    --chip: 42px;
+    --chip-gap: 10px;
+    --dot-gap: 8px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html.lk-js [data-rise] { opacity: 1; }
+}
+</style>
+</head>
+<body>
+
+  <div class="lk-stage">
+    <div class="uip-layer">
+      <div class="bn-page">
+        <h1 class="bn-title" data-rise="0">Hey, we’re Renova.web</h1>
+
+        <div class="bn-head" data-rise="1">
+          <div class="bn-head-spacer" aria-hidden="true"></div>
+          <p class="bn-lead">A studio crafting bold brand identities, digital experiences and motion-driven narratives — helping ideas move with clarity and purpose.</p>
+          <a class="bn-works" href="#">Our works</a>
+        </div>
+
+        <div class="bn-grid">
+          <!-- SOFFIT — the live ground: one canvas laid into the union box, cut to the three union cells -->
+          <div class="bn-ground" aria-hidden="true"><canvas id="gl"></canvas></div>
+
+          <!-- EXPERIENCE — union cell, origin (0, 0) -->
+          <section class="bn-card bn-card--union bn-exp" data-rise="2">
+            <div class="bn-tag">
+              <svg class="bn-star" viewBox="0 0 18 18" aria-hidden="true"><path d="M9.5 7.79297L15.0107 2.28223L15.7178 2.98926L10.207 8.5H18V9.5H10.207L15.7178 15.0107L15.0107 15.7178L9.5 10.207V18H8.5V10.207L2.98926 15.7178L2.28223 15.0107L7.79297 9.5H0V8.5H7.79297L2.28223 2.98926L2.98926 2.28223L8.5 7.79297V0H9.5V7.79297Z"/></svg>
+              <span>EXPERIENCE</span>
+              <svg class="bn-star" viewBox="0 0 18 18" aria-hidden="true"><path d="M9.5 7.79297L15.0107 2.28223L15.7178 2.98926L10.207 8.5H18V9.5H10.207L15.7178 15.0107L15.0107 15.7178L9.5 10.207V18H8.5V10.207L2.98926 15.7178L2.28223 15.0107L7.79297 9.5H0V8.5H7.79297L2.28223 2.98926L2.98926 2.28223L8.5 7.79297V0H9.5V7.79297Z"/></svg>
+            </div>
+            <div class="bn-exp-list">
+              <div class="bn-exp-row"><span>2023–Now</span><em>Scene systems</em><span>Onda</span></div>
+              <div class="bn-exp-row"><span>2020–2023</span><em>Lead visual craft</em><span>Nova</span></div>
+              <div class="bn-exp-row"><span>2017–2020</span><em>Brand design</em><span>Orbit</span></div>
+            </div>
+          </section>
+
+          <!-- TESTIMONIAL — Rectangle 8 -->
+          <section class="bn-card bn-card--light bn-quote" data-rise="3">
+            <div class="bn-tag">
+              <svg class="bn-star" viewBox="0 0 18 18" aria-hidden="true"><path d="M9.5 7.79297L15.0107 2.28223L15.7178 2.98926L10.207 8.5H18V9.5H10.207L15.7178 15.0107L15.0107 15.7178L9.5 10.207V18H8.5V10.207L2.98926 15.7178L2.28223 15.0107L7.79297 9.5H0V8.5H7.79297L2.28223 2.98926L2.98926 2.28223L8.5 7.79297V0H9.5V7.79297Z"/></svg>
+              <span>TESTIMONIAL</span>
+              <svg class="bn-star" viewBox="0 0 18 18" aria-hidden="true"><path d="M9.5 7.79297L15.0107 2.28223L15.7178 2.98926L10.207 8.5H18V9.5H10.207L15.7178 15.0107L15.0107 15.7178L9.5 10.207V18H8.5V10.207L2.98926 15.7178L2.28223 15.0107L7.79297 9.5H0V8.5H7.79297L2.28223 2.98926L2.98926 2.28223L8.5 7.79297V0H9.5V7.79297Z"/></svg>
+            </div>
+            <p class="bn-quote-body">“Onda elevated our brand with a level of polish<br class="bn-nl" /> that exceeded every expectation. The process<br class="bn-nl" /> felt effortless — and the results speak for<br class="bn-nl" /> themselves.”</p>
+            <p class="bn-quote-by">Maya J. — Marketing Director</p>
+          </section>
+
+          <!-- 10M+ — union cell, origin (col + gap, r1 + gap) -->
+          <section class="bn-card bn-card--union bn-stat" data-rise="4">
+            <div class="bn-stat-box">
+              <span class="bn-stat-num">10M+</span>
+              <span class="bn-stat-cap">views rendered</span>
+            </div>
+          </section>
+
+          <!-- OUR TOOL STACK — union cell, origin (2 col + 2 gap, 0) -->
+          <section class="bn-card bn-card--union bn-stack" data-rise="5">
+            <div class="bn-tag">
+              <svg class="bn-star" viewBox="0 0 18 18" aria-hidden="true"><path d="M9.5 7.79297L15.0107 2.28223L15.7178 2.98926L10.207 8.5H18V9.5H10.207L15.7178 15.0107L15.0107 15.7178L9.5 10.207V18H8.5V10.207L2.98926 15.7178L2.28223 15.0107L7.79297 9.5H0V8.5H7.79297L2.28223 2.98926L2.98926 2.28223L8.5 7.79297V0H9.5V7.79297Z"/></svg>
+              <span>OUR TOOL STACK</span>
+              <svg class="bn-star" viewBox="0 0 18 18" aria-hidden="true"><path d="M9.5 7.79297L15.0107 2.28223L15.7178 2.98926L10.207 8.5H18V9.5H10.207L15.7178 15.0107L15.0107 15.7178L9.5 10.207V18H8.5V10.207L2.98926 15.7178L2.28223 15.0107L7.79297 9.5H0V8.5H7.79297L2.28223 2.98926L2.98926 2.28223L8.5 7.79297V0H9.5V7.79297Z"/></svg>
+            </div>
+            <div class="bn-chips">
+              <i>◐</i>
+              <i>◫</i>
+              <i>✦</i>
+              <i>◇</i>
+            </div>
+          </section>
+
+          <!-- CONTACT — Rectangle 12 -->
+          <section class="bn-card bn-card--light bn-contact" data-rise="6">
+            <div class="bn-tag">
+              <svg class="bn-star" viewBox="0 0 18 18" aria-hidden="true"><path d="M9.5 7.79297L15.0107 2.28223L15.7178 2.98926L10.207 8.5H18V9.5H10.207L15.7178 15.0107L15.0107 15.7178L9.5 10.207V18H8.5V10.207L2.98926 15.7178L2.28223 15.0107L7.79297 9.5H0V8.5H7.79297L2.28223 2.98926L2.98926 2.28223L8.5 7.79297V0H9.5V7.79297Z"/></svg>
+              <span>CONTACT</span>
+              <svg class="bn-star" viewBox="0 0 18 18" aria-hidden="true"><path d="M9.5 7.79297L15.0107 2.28223L15.7178 2.98926L10.207 8.5H18V9.5H10.207L15.7178 15.0107L15.0107 15.7178L9.5 10.207V18H8.5V10.207L2.98926 15.7178L2.28223 15.0107L7.79297 9.5H0V8.5H7.79297L2.28223 2.98926L2.98926 2.28223L8.5 7.79297V0H9.5V7.79297Z"/></svg>
+            </div>
+            <div class="bn-contact-row">
+              <span>hi@onda.studio</span>
+              <b aria-hidden="true"></b>
+              <span>+351 898 72 01</span>
+            </div>
+          </section>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+  /* ══ The entry cascade ═══════════════════════════════════════════════
+   * Every `[data-rise]` element springs from y:14px / opacity:0 to rest,
+   * staggered 45ms per step, on a react-spring `{ tension: 220, friction:
+   * 26 }` — integrated here rather than eased, so the overshoot is the
+   * real thing and not a bezier impression of it.
+   *
+   * Replay: press R. (There is no click-to-replay — the composition is
+   * full bleed, so every click would land on it.) */
+
+  /* element → (yPx, opacity) => void. Whatever the cascade writes to an
+   * element it also reports here, so something that is NOT inside that
+   * element can ride the same spring. The live ground uses it: the canvas
+   * sits under the union cards, not in them. */
+  const riseFollow = new WeakMap();
+
+  (() => {
+    const STEP_MS = 45;
+    const FROM_Y = 14;
+    const TENSION = 220;
+    const FRICTION = 26;
+    const MASS = 1;
+    const PRECISION = 0.01;
+    const SUBSTEP = 1 / 240;
+
+    const root = document.documentElement;
+    root.classList.add("lk-js");
+
+    const nodes = Array.from(document.querySelectorAll("[data-rise]"));
+    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    let generation = 0;
+
+    const report = (el, y, opacity) => {
+      const follow = riseFollow.get(el);
+      if (follow) follow(y, opacity);
+    };
+
+    const rest = (el) => {
+      el.style.transform = "";
+      el.style.opacity = "1";
+      el.style.willChange = "";
+      report(el, 0, 1);
+    };
+
+    const rise = (el, delayMs, gen) => {
+      el.style.opacity = "0";
+      el.style.transform = "translate3d(0," + FROM_Y + "px,0)";
+      el.style.willChange = "transform, opacity";
+      report(el, FROM_Y, 0);
+
+      if (reduced) {
+        window.setTimeout(() => { if (gen === generation) rest(el); }, delayMs);
+        return;
+      }
+
+      let x = FROM_Y;
+      let v = 0;
+      let last = null;
+
+      const frame = (now) => {
+        if (gen !== generation) return;
+        if (last === null) last = now;
+
+        // Clamp the step so a backgrounded tab never explodes the integrator.
+        const dt = Math.min((now - last) / 1000, 0.064);
+        last = now;
+
+        const steps = Math.max(1, Math.ceil(dt / SUBSTEP));
+        const h = dt / steps;
+        for (let i = 0; i < steps; i++) {
+          const a = (-TENSION * x - FRICTION * v) / MASS;
+          v += a * h;
+          x += v * h;
+        }
+
+        // opacity rides the same normalised trajectory as y — one spring
+        // shape, two properties, exactly as react-spring resolves it.
+        const p = Math.max(0, Math.min(1, 1 - x / FROM_Y));
+        el.style.transform = "translate3d(0," + x.toFixed(3) + "px,0)";
+        el.style.opacity = String(p);
+        report(el, x, p);
+
+        if (Math.abs(x) < PRECISION && Math.abs(v) < PRECISION) return rest(el);
+        requestAnimationFrame(frame);
+      };
+
+      // The stagger is a timer, not a rAF countdown: comparing a rAF
+      // timestamp against a `performance.now()` deadline quietly never
+      // fires under a virtual clock, and it burns a frame per element
+      // per tick besides.
+      window.setTimeout(() => {
+        if (gen === generation) requestAnimationFrame(frame);
+      }, delayMs);
+    };
+
+    const play = () => {
+      const gen = ++generation;
+      nodes.forEach((el) => {
+        const order = Number(el.dataset.rise) || 0;
+        rise(el, order * STEP_MS, gen);
+      });
+    };
+
+    play();
+
+    addEventListener("keydown", (e) => {
+      if (e.key === "r" || e.key === "R") play();
+    });
+  })();
+  </script>
+
+  <script>
+  /* ══ Soffit — an animated WebGL2 gradient ════════════════════════════
+   * The underside of an overhang: one long fall from the opening into the
+   * shade, and a bounce coming back the other way so the deep end lifts
+   * off the floor instead of dying flat — the hand turns the light and
+   * walks it along the opening.
+   *
+   * Plain WebGL2: one fullscreen triangle, one fragment shader, GLSL ES
+   * 3.00. Every transformation happens in the shader. Per frame the CPU
+   * lerps the pointer scalars, uploads two uniforms and issues one
+   * drawArrays.
+   *
+   * The palette is CONFIG, and CONFIG only. To recolour this, change
+   * these values — never the shader: the ramp is walked perceptually and
+   * the stops are placed against each other, not chosen independently. */
+  const CONFIG = {
+    "bgColor": "#062334",
+    "colorA": "#2b7be8",
+    "colorB": "#2bc8e8",
+    "colorC": "#4fe0d8",
+    "colorD": "#7fe8a0",
+    "scale": 1,
+    "speed": 0.33,
+    "tilt": 1.87,
+    "rock": 0.12,
+    "horizon": 0.36,
+    "breathe": 0.29,
+    "spread": 0.41,
+    "curve": 3.32,
+    "direct": 0.97,
+    "bounce": 0.38,
+    "bounceCurve": 4.25,
+    "spillCentre": 0.3,
+    "spillWidth": 2.18,
+    "spillFloor": 0.26,
+    "amount": 0.2,
+    "warp": 2.58,
+    "warpScale": 0.78,
+    "flow": 0.475,
+    "roughness": 0.29,
+    "lacunarity": 1.99,
+    "motes": 0.074,
+    "moteScale": 7,
+    "ambient": 0.24,
+    "contrast": 2.45,
+    "midpoint": 0.57,
+    "sink": 0.24,
+    "glow": 0.38,
+    "grain": 0,
+    "grainAnim": 0,
+    "dither": 0.58,
+    "vignette": 0.21,
+    "steer": -0.13,
+    "lift": 0.11,
+    "sweep": 0.5,
+    "cursor": 1,
+    "parallax": 0.0137,
+    "maxDpr": 1
+  }
+
+  const hexToVec3 = hex => {
+    const n = parseInt(hex.slice(1), 16)
+    return [(n >> 16 & 255) / 255, (n >> 8 & 255) / 255, (n & 255) / 255]
+  }
+
+  const canvas = document.getElementById('gl')
+  const gl = canvas.getContext('webgl2', { alpha: false, antialias: false, depth: false, stencil: false, powerPreference: 'high-performance' })
+  /* No message over the page: this composition has a ground of its own to fall back on.
+     Stopping here leaves `.lk-gl` unset, and the three cells keep the ramp they were designed with. */
+  if (!gl) throw new Error('no webgl2')
+
+  const VERT = `#version 300 es
+void main() {
+  vec2 p = vec2((gl_VertexID << 1) & 2, gl_VertexID & 2);
+  gl_Position = vec4(p * 2.0 - 1.0, 0.0, 1.0);
+}`
+
+  /* ====== THE SHADER — ⭐ the only part that changes between gradients ====== */
+  const FRAG = `#version 300 es
+precision highp float;
+out vec4 fragColor;
+
+uniform vec2  iResolution;
+uniform float iTime;
+uniform vec2  iMouse;          // aspect-corrected units, same space as uv
+uniform float uScale;          // zoom of the whole picture — uv and the pointer together
+
+uniform vec3  uBg, uColorA, uColorB, uColorC, uColorD;
+uniform float uSpeed, uTilt, uRock, uHorizon, uBreathe, uSpread, uCurve, uDirect;
+uniform float uBounce, uBounceCurve;
+uniform float uSpillCentre, uSpillWidth, uSpillFloor;
+uniform float uAmount, uWarp, uWarpScale, uFlow, uRoughness, uLacunarity, uMotes, uMoteScale;
+uniform float uAmbient, uContrast, uMidpoint, uSink, uGlow;
+uniform float uGrain, uDither, uVignette;
+uniform float uSteer, uLift, uSweep, uParallax;
+
+#define OCTAVES 4
+
+vec2 hash2(vec2 p) {
+  p = vec2(dot(p, vec2(127.1, 311.7)), dot(p, vec2(269.5, 183.3)));
+  return -1.0 + 2.0 * fract(sin(p) * 43758.5453123);
+}
+
+float snoise(vec2 p) {
+  const float K1 = 0.366025404, K2 = 0.211324865;
+  vec2 i = floor(p + (p.x + p.y) * K1);
+  vec2 a = p - i + (i.x + i.y) * K2;
+  float m = step(a.y, a.x);
+  vec2 o = vec2(m, 1.0 - m);
+  vec2 b = a - o + K2;
+  vec2 c = a - 1.0 + 2.0 * K2;
+  vec3 h = max(0.5 - vec3(dot(a, a), dot(b, b), dot(c, c)), 0.0);
+  vec3 n = h * h * h * h * vec3(dot(a, hash2(i)), dot(b, hash2(i + o)), dot(c, hash2(i + 1.0)));
+  return dot(n, vec3(70.0));
+}
+
+float fbm(vec2 p) {
+  float v = 0.0, amp = 0.5;
+  for (int i = 0; i < OCTAVES; i++) {
+    v += amp * snoise(p);
+    p *= uLacunarity;
+    amp *= uRoughness;
+  }
+  return v;
+}
+
+vec3 ramp4(float t) {
+  vec3 c = mix(uColorA, uColorB, smoothstep(0.00, 0.36, t));
+  c = mix(c, uColorC, smoothstep(0.32, 0.70, t));
+  c = mix(c, uColorD, smoothstep(0.66, 1.00, t));
+  return c;
+}
+
+float triDither(vec2 fc) {
+  float a = fract(sin(dot(fc, vec2(12.9898, 78.233))) * 43758.5453);
+  float b = fract(sin(dot(fc + 17.0, vec2(12.9898, 78.233))) * 43758.5453);
+  return (a + b - 1.0) / 255.0;
+}
+
+
+// ---- house grain. ONE look across the collection: an integer hash (no sin() streaks),
+// triangular so it reads as film rather than static, weighted into the midtones so it
+// never crusts a black or a white. Static by default; uGrainAnim re-seeds it 24×/s.
+uniform float uGrainAnim;
+float houseGrain(vec2 fc) {
+  uvec2 q = uvec2(fc) * uvec2(1597334677u, 3812015801u)
+          + uint(floor(iTime * 24.0 * uGrainAnim)) * 2654435769u;
+  uint n = q.x ^ q.y; n = n * 1664525u + 1013904223u; n ^= n >> 16u; n *= 2246822519u; n ^= n >> 13u;
+  float a = float(n & 0xffffu) / 65535.0;
+  n *= 3266489917u; n ^= n >> 16u;
+  float b = float(n & 0xffffu) / 65535.0;
+  return a + b - 1.0;
+}
+void main() {
+  vec2 uv = (gl_FragCoord.xy - 0.5 * iResolution) / iResolution.y;
+  uv *= uScale;                             // scale: zoom of the whole picture
+  vec2 iM = iMouse * uScale;                // the pointer, in the same zoomed space
+  float t = iTime * uSpeed;
+
+  vec2 p = uv - iM * uParallax;
+
+  // THE LIGHT HAS A DIRECTION and the picture is that direction, not a pattern. Everything
+  // below is a function of ONE number: how far along the light axis this pixel is. The noise
+  // is only allowed to perturb that number, which is the difference between a lit surface
+  // and a noise field with a nice palette on it.
+  float tilt = uTilt + sin(t * 0.13) * uRock + iM.x * uSteer;
+  vec2 dir = vec2(cos(tilt), sin(tilt));
+  float axis = dot(p, dir);
+  float across = dot(p, vec2(-dir.y, dir.x));
+
+  // the air the light crosses, as a domain-warped field. Held to uAmount: past about a third
+  // it stops perturbing the light and starts being the subject, and the direction dissolves.
+  vec2 q = vec2(fbm(p * uWarpScale + vec2(0.0, t * uFlow)),
+                fbm(p * uWarpScale + vec2(5.2, 1.3) - t * uFlow * 0.7));
+  float air = fbm(p + uWarp * q + vec2(t * 0.12, -t * 0.09)) * 0.5 + 0.5;
+
+  float horizon = uHorizon + sin(t * 0.09 + 2.1) * uBreathe - iM.y * uLift;
+  float alt = clamp(0.5 + (axis - horizon) * uSpread + (air - 0.5) * uAmount, 0.0, 1.0);
+
+  // THE OPENING IS NOT INFINITELY WIDE. A band across the light axis — never a disc — so the
+  // brightest part of the frame sits off to one side and the composition has a long empty end.
+  float ac = (across - uSpillCentre - iM.x * uSweep) / max(0.05, uSpillWidth);
+  float spill = mix(uSpillFloor, 1.0, exp(-ac * ac));
+
+  float direct = pow(alt, max(0.05, uCurve)) * uDirect * spill;
+
+  // THE BOUNCE. Light that has already been in the shade and come back out of it: it falls off
+  // the OTHER way, so the deep end lifts off the floor instead of dying to a flat black. This
+  // is the whole reason a shadow can be a subject rather than an absence.
+  float bounce = uBounce * pow(1.0 - alt, max(0.05, uBounceCurve));
+
+  float f = uAmbient + direct + bounce;
+  f += uMotes * snoise(p * uMoteScale + vec2(-t * 0.5, t * 0.35)) * 0.5 * alt;
+
+  f = clamp((f - uMidpoint) * uContrast + 0.5, 0.0, 1.0);
+
+  vec3 col = ramp4(f);
+  col += uColorD * uGlow * pow(f, 4.0);
+  col = mix(uBg, col, smoothstep(0.0, max(0.01, uSink), f) * 0.90 + 0.10);
+
+  col *= 1.0 - uVignette * dot(uv, uv);
+  { float hgL = clamp(dot(col, vec3(0.299, 0.587, 0.114)), 0.0, 1.0);
+    col += houseGrain(gl_FragCoord.xy) * uGrain * mix(1.0, 4.0 * hgL * (1.0 - hgL), 0.6); }
+  col += triDither(gl_FragCoord.xy) * uDither;
+
+  fragColor = vec4(clamp(col, 0.0, 1.0), 1.0);
+}
+`
+
+  function compile(type, src) {
+    const sh = gl.createShader(type)
+    gl.shaderSource(sh, src)
+    gl.compileShader(sh)
+    if (!gl.getShaderParameter(sh, gl.COMPILE_STATUS)) throw new Error(gl.getShaderInfoLog(sh))
+    return sh
+  }
+
+  const program = gl.createProgram()
+  gl.attachShader(program, compile(gl.VERTEX_SHADER, VERT))
+  gl.attachShader(program, compile(gl.FRAGMENT_SHADER, FRAG))
+  gl.linkProgram(program)
+  if (!gl.getProgramParameter(program, gl.LINK_STATUS)) throw new Error(gl.getProgramInfoLog(program))
+  gl.useProgram(program)
+  gl.bindVertexArray(gl.createVertexArray())
+
+  const LOC = {}
+  const loc = n => (n in LOC ? LOC[n] : (LOC[n] = gl.getUniformLocation(program, n)))
+  const u1f = (n, v) => gl.uniform1f(loc(n), v)
+  const u2f = (n, x, y) => gl.uniform2f(loc(n), x, y)
+  const u3c = (n, hex) => { const c = hexToVec3(hex); gl.uniform3f(loc(n), c[0], c[1], c[2]) }
+
+  /* ====== CONFIG → UNIFORMS ====== */
+  function applyConfig() {
+    gl.useProgram(program)
+    u3c('uBg', CONFIG.bgColor)
+    u3c('uColorA', CONFIG.colorA)
+    u3c('uColorB', CONFIG.colorB)
+    u3c('uColorC', CONFIG.colorC)
+    u3c('uColorD', CONFIG.colorD)
+    u1f('uScale', CONFIG.scale)
+    u1f('uSpeed', CONFIG.speed)
+    u1f('uTilt', CONFIG.tilt)
+    u1f('uRock', CONFIG.rock)
+    u1f('uHorizon', CONFIG.horizon)
+    u1f('uBreathe', CONFIG.breathe)
+    u1f('uSpread', CONFIG.spread)
+    u1f('uCurve', CONFIG.curve)
+    u1f('uDirect', CONFIG.direct)
+    u1f('uBounce', CONFIG.bounce)
+    u1f('uBounceCurve', CONFIG.bounceCurve)
+    u1f('uSpillCentre', CONFIG.spillCentre)
+    u1f('uSpillWidth', CONFIG.spillWidth)
+    u1f('uSpillFloor', CONFIG.spillFloor)
+    u1f('uAmount', CONFIG.amount)
+    u1f('uWarp', CONFIG.warp)
+    u1f('uWarpScale', CONFIG.warpScale)
+    u1f('uFlow', CONFIG.flow)
+    u1f('uRoughness', CONFIG.roughness)
+    u1f('uLacunarity', CONFIG.lacunarity)
+    u1f('uMotes', CONFIG.motes)
+    u1f('uMoteScale', CONFIG.moteScale)
+    u1f('uAmbient', CONFIG.ambient)
+    u1f('uContrast', CONFIG.contrast)
+    u1f('uMidpoint', CONFIG.midpoint)
+    u1f('uSink', CONFIG.sink)
+    u1f('uGlow', CONFIG.glow)
+    u1f('uGrain', CONFIG.grain)
+    u1f('uGrainAnim', CONFIG.grainAnim)
+    u1f('uDither', CONFIG.dither)
+    u1f('uVignette', CONFIG.vignette)
+    u1f('uSteer', CONFIG.steer)
+    u1f('uLift', CONFIG.lift)
+    u1f('uSweep', CONFIG.sweep)
+    u1f('uParallax', CONFIG.parallax)
+    fit()
+  }
+
+  /* ====== THE OPENING — where the canvas sits, and what it is cut to ====== */
+  /* The frame is opaque white; the three union cells are the only way through it. So the
+     canvas is not the viewport here — it is the union box: the bounds of the three cells.
+     Its drawing buffer, iResolution and the pointer space all follow that box, which is
+     why the field runs unbroken from one cell into the next.
+
+     Nothing below is per-frame. The box and the cut are rewritten only when layout changes;
+     the one thing that moves is the cut riding the entry cascade for its half second. */
+  const grid = canvas.closest('.bn-grid')
+  const ground = canvas.parentElement
+  const cells = Array.from(grid.querySelectorAll('.bn-card--union'), card => {
+    const veil = ground.appendChild(document.createElement('i'))
+    veil.className = 'bn-veil'
+    return { card, veil, x: 0, y: 0, w: 0, h: 0, dy: 0 }
+  })
+  const box = { w: 1, h: 1 }
+  let radius = 0
+
+  /* Three rounded rects in one path — the boolean Union, as a clip. `dy` is a cell's
+     current offset in the entry cascade, so its window travels with its card. */
+  function cut() {
+    const n = v => Math.round(v * 1000) / 1000
+    let d = ''
+    for (const c of cells) {
+      const r = n(Math.min(radius, c.w / 2, c.h / 2)), w = n(c.w - 2 * r), h = n(c.h - 2 * r)
+      d += `M${n(c.x + r)},${n(c.y + c.dy)}h${w}a${r},${r} 0 0 1 ${r},${r}v${h}a${r},${r} 0 0 1 ${-r},${r}`
+        + `h${-w}a${r},${r} 0 0 1 ${-r},${-r}v${-h}a${r},${r} 0 0 1 ${r},${-r}z`
+    }
+    ground.style.clipPath = `path('${d}')`
+  }
+
+  /* Measure the three cells, lay the canvas over their bounds, cut it, size the buffer.
+     Edges are snapped to device pixels in page space — the same rounding the browser gives
+     the light cards' own boxes — so a window never sits a soft half-pixel off its neighbour.
+     A card's rect is read with its cascade offset taken back out: the cells are measured
+     where they rest, not where the spring currently has them. */
+  function fit() {
+    const dp = window.devicePixelRatio || 1
+    const snap = v => Math.round(v * dp) / dp
+    const sx = window.scrollX, sy = window.scrollY
+    const g = grid.getBoundingClientRect()
+    let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity
+    for (const c of cells) {
+      const r = c.card.getBoundingClientRect()
+      c.x = snap(r.left + sx)
+      c.y = snap(r.top - c.dy + sy)
+      c.w = snap(r.right + sx) - c.x
+      c.h = snap(r.bottom - c.dy + sy) - c.y
+      x0 = Math.min(x0, c.x); x1 = Math.max(x1, c.x + c.w)
+      y0 = Math.min(y0, c.y); y1 = Math.max(y1, c.y + c.h)
+    }
+    box.w = x1 - x0
+    box.h = y1 - y0
+    ground.style.left = x0 - (g.left + sx) + 'px'
+    ground.style.top = y0 - (g.top + sy) + 'px'
+    ground.style.width = box.w + 'px'
+    ground.style.height = box.h + 'px'
+    for (const c of cells) {
+      c.x -= x0
+      c.y -= y0
+      c.veil.style.left = c.x + 'px'
+      c.veil.style.top = c.y + 'px'
+      c.veil.style.width = c.w + 'px'
+      c.veil.style.height = c.h + 'px'
+    }
+    radius = parseFloat(getComputedStyle(cells[0].card).borderTopLeftRadius) || 0
+    cut()
+    resize()
+  }
+
+  /* The cascade reports each union card's flight here. The canvas cannot fade per cell, so
+     the veil over that cell fades out exactly as the card fades in, and the cut follows the
+     card's 14px of travel. Seeded from whatever the card is wearing right now, so this holds
+     whether the cascade has started, finished, or is not on the page at all. */
+  for (const c of cells) {
+    const follow = (dy, opacity) => {
+      c.dy = dy
+      c.veil.style.opacity = 1 - opacity
+      c.veil.style.visibility = opacity < 1 ? 'visible' : 'hidden'
+      c.veil.style.transform = dy ? `translate3d(0,${dy}px,0)` : ''
+      cut()
+    }
+    riseFollow.set(c.card, follow)
+    const s = c.card.style, m = /,\s*(-?[\d.]+)px/.exec(s.transform)
+    follow(m ? +m[1] : 0, s.opacity === '' ? 1 : +s.opacity)
+  }
+
+  /* ====== RESIZE ====== */
+  let dpr = 1
+  function resize() {
+    dpr = Math.min(window.devicePixelRatio || 1, CONFIG.maxDpr)
+    const w = Math.max(1, Math.round(box.w * dpr))
+    const h = Math.max(1, Math.round(box.h * dpr))
+    const realloc = canvas.width !== w || canvas.height !== h
+    if (realloc) { canvas.width = w; canvas.height = h }
+    gl.viewport(0, 0, w, h)
+    gl.useProgram(program)
+    u2f('iResolution', w, h)
+    /* A reallocated drawing buffer comes back empty, and this can run after the frame's
+       own draw — so fill it again here rather than present one blank frame mid-drag. */
+    if (realloc) gl.drawArrays(gl.TRIANGLES, 0, 3)
+  }
+  /* Coalesced to one resize per frame. A window drag or a phone rotation fires resize far
+     faster than the display refreshes, and every raw call reallocates the drawing buffer and
+     re-uploads iResolution — that burst is the hitch you feel while dragging an edge. */
+  let resizeQueued = false
+  addEventListener('resize', () => {
+    if (resizeQueued) return
+    resizeQueued = true
+    requestAnimationFrame(() => { resizeQueued = false; fit() })
+  }, { passive: true })
+  /* The union box can also change with the window standing still — a webfont lands and the
+     header rewraps, a breakpoint refolds the cells. ResizeObserver is already once-per-frame
+     and runs after layout, before paint, so the cut never trails the cards by a frame. */
+  const watch = new ResizeObserver(fit)
+  for (const el of grid.parentElement.children) watch.observe(el)
+  for (const c of cells) watch.observe(c.card)
+
+  /* ====== POINTER (a handful of scalars — the only per-frame CPU maths allowed) ====== */
+  const mouse = { x: 0, y: 0, ax: 0, ay: 0, tx: 0, ty: 0 }
+  /* One handler for both events, and it does exactly one job: write the target. Everything
+     that moves is integrated in the render loop, so a flick that fires forty events inside a
+     single frame costs the same as one that fires one — and a touch now aims on contact
+     instead of staying dead until the first drag.
+     The target is written in the canvas's own aspect-corrected space — the same space as
+     uv — so a hand over the middle of the union is (0, 0) wherever the page has scrolled. */
+  const aim = e => {
+    const r = canvas.getBoundingClientRect()
+    if (!r.width || !r.height) return
+    const a = r.width / r.height
+    mouse.tx = ((e.clientX - r.left) / r.width - 0.5) * a
+    mouse.ty = (0.5 - (e.clientY - r.top) / r.height)
+  }
+  addEventListener('pointermove', aim, { passive: true })
+  addEventListener('pointerdown', aim, { passive: true })
+
+  /* ====== RENDER LOOP ====== */
+  /* The loop does exactly four things: step the pointer followers by elapsed time, upload two uniforms,
+     draw one triangle, tick the fps readout. Everything else is the shader's job. */
+
+  let visible = true
+  new IntersectionObserver(es => { visible = es[0].isIntersecting }, { threshold: 0 }).observe(canvas)
+
+  const t0 = performance.now()
+  let prevT = t0, clock = 0, fpsT = t0, fpsN = 0
+  function frame(now) {
+    requestAnimationFrame(frame)
+
+    /* PACING — one clamped clock drives everything below it.
+       `ms` is the real frame interval pinned to [4.17, 50] and `s` is that interval measured
+       in 60 Hz frames, so every ease and every spring in this loop advances by elapsed TIME
+       rather than by frame count — the same follow-lag on a 60, 120 or 144 Hz panel instead
+       of a chase that doubles in speed when the monitor does. The upper clamp on `s` is what
+       stops a dropped frame or a GC pause from flinging the chain across the screen in one
+       step, and it sits low enough that no damping term can ever overshoot into a wobble.
+       The shader clock is accumulated from the SAME clamped interval instead of read off the
+       wall clock — rAF stops in a background tab but wall time does not, and handing the
+       shader that gap is exactly what makes a field lurch on the way back. Clamped, an
+       alt-tab costs a pause and never a jump. */
+    const raw = now - prevT
+    prevT = now
+    if (!visible || document.hidden) return
+    const ms = raw > 50 ? 50 : raw < 4.167 ? 4.167 : raw
+    const s = ms > 36.7 ? 2.2 : ms * 0.06
+    clock += ms * 0.001
+
+    /* Two poles, not one. A single lerp can only decelerate INTO its target: a direction
+       change hinges on a corner and the tail of every move reads as dead weight. A quick lead
+       node feeding a slower body swings through the turn and coasts for a beat after the hand
+       stops — the field chases the cursor instead of hanging off it. Both rates scale with
+       `s`, so the lag is the same at 60 Hz and at 144. */
+    const kLead = 0.105 * s, kBody = 0.043 * s
+    mouse.ax += (mouse.tx - mouse.ax) * kLead
+    mouse.ay += (mouse.ty - mouse.ay) * kLead
+    mouse.x  += (mouse.ax - mouse.x)  * kBody
+    mouse.y  += (mouse.ay - mouse.y)  * kBody
+
+    u1f('iTime', clock)
+    /* cursor 0: the hand is ignored and the pointer eases back to where it rested — the
+       gradient goes fully ambient. Nothing else changes, so it can be flipped live. */
+    if (mouse.rest === undefined) mouse.rest = { x: mouse.tx, y: mouse.ty }
+    if (!CONFIG.cursor) { mouse.tx = mouse.rest.x; mouse.ty = mouse.rest.y }
+    u2f('iMouse', mouse.x, mouse.y)
+    gl.drawArrays(gl.TRIANGLES, 0, 3)
+
+    fpsN++
+    if (now - fpsT > 500) {
+      fpsT = now; fpsN = 0
+    }
+  }
+
+  applyConfig()
+  gl.drawArrays(gl.TRIANGLES, 0, 3)        // one draw before the reveal, so we never fade onto a blank canvas
+  /* The reveal: the cells drop their ramp and the canvas shows through. If the context is ever
+     lost the ramp comes straight back, so a cell is never left looking through to nothing. */
+  document.documentElement.classList.add('lk-gl')
+  canvas.addEventListener('webglcontextlost', () => document.documentElement.classList.remove('lk-gl'))
+  requestAnimationFrame(frame)
+  </script>
+</body>
+</html>
